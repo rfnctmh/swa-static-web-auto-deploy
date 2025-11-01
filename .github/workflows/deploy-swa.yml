@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main", "master"]
   schedule:
-    - cron: "0 0 * * *"   # daily
+    - cron: "0 0 * * *"   # daily (UTC) -> 台灣 08:00
   workflow_dispatch:
 
 jobs:
@@ -28,4 +28,3 @@ jobs:
           api_location: ""
           output_location: ""
           skip_app_build: true
-          output_location: ""
