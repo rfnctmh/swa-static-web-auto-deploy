@@ -68,7 +68,7 @@ jobs:
           api_location: ""         # 沒有 API 就空著
           output_location: ""      # 你沒有額外 build 目錄就空著
           # 若你真的要「完全不讓它幫你 build」，可打開這行
-          # skip_app_build: true
+          skip_app_build: true
 
           # OIDC 給 Azure 用
           github_id_token: ${{ steps.idtoken.outputs.result }}
