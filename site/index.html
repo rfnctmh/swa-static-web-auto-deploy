@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Azure Static Web Apps - Demo Site</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container">
+      <h1>Index</h1>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
+    <section class="hero">
+      <h2>Azure Static Web</h2>
+      <p>Demo:Static Web</p>
+    </section>
+  </main>
+  <footer class="footer">
+    <div class="container">
+      <small>© 2025 SWA Demo.</small>
+    </div>
+  </footer>
+  <script src="js/main.js"></script>
+
+<section class="build-info">
+  <p id="build-time">Loading build time...</p>
+</section>
+<script>
+  fetch("build.txt")
+    .then(r => r.text())
+    .then(t => {
+      document.getElementById("build-time").innerText = "Last build: " + t;
+    })
+    .catch(() => {
+      const el = document.getElementById("build-time");
+      if (el) el.innerText = "Last build: (no info)";
+    });
+</script>
+
+</body>
+</html>

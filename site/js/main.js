@@ -1,0 +1,1 @@
+console.log('SWA demo site loaded at ' + new Date().toISOString());
