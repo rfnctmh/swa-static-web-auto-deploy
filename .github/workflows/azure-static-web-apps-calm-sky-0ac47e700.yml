@@ -4,47 +4,75 @@ on:
   push:
     branches:
       - main
+      - master
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
       - main
+      - master
+  schedule:
+    - cron: "0 0 * * *"  # 每天 00:00 UTC，自動部署一次（台灣時間 08:00）
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    # push 一定要跑；PR 要在沒被關閉時跑；排程也要跑；手動也要跑
+    if: github.event_name == 'push' ||
+        (github.event_name == 'pull_request' && github.event.action != 'closed') ||
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     permissions:
-       id-token: write
-       contents: read
+      id-token: write
+      contents: read
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
+
+      # 這段是你想要的「自動部署時順便寫個檔」，
+      # 不管是排程、push 還是手動，都會寫一份到 site/build.txt
+      - name: Write build time file
+        run: |
+          mkdir -p site
+          echo "last_build=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" > site/build.txt
+
+      # Azure 預設那段：先拿 OIDC token 給後面的 action 用
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
+
       - name: Get Id Token
-        uses: actions/github-script@v6
         id: idtoken
+        uses: actions/github-script@v6
         with:
-           script: |
-               const coredemo = require('@actions/core')
-               return await coredemo.getIDToken()
-           result-encoding: string
+          script: |
+            const coredemo = require('@actions/core')
+            return await coredemo.getIDToken()
+          result-encoding: string
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_CALM_SKY_0AC47E700 }}
+          # 這裡請換成你 Azure 那個實際產生的 secret 名稱
+          # 例如：AZURE_STATIC_WEB_APPS_API_TOKEN_CALM_SKY_0AC47E700
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "./site" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "." # Built app content directory - optional
+
+          # ===== 專案路徑設定 =====
+          app_location: "site"     # 你的前端原始碼目錄
+          api_location: ""         # 沒有 API 就空著
+          output_location: ""      # 你沒有額外 build 目錄就空著
+          # 若你真的要「完全不讓它幫你 build」，可打開這行
+          # skip_app_build: true
+
+          # OIDC 給 Azure 用
           github_id_token: ${{ steps.idtoken.outputs.result }}
-          ###### End of Repository/Build Configurations ######
+          # =======================
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
