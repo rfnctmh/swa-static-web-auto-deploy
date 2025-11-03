@@ -39,7 +39,7 @@ jobs:
       - name: Write build time file
         run: |
           mkdir -p site
-          echo "last_build=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" > site/build.txt
+          echo "Last build: $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S GMT+8')" > site/build.txt
 
       # Azure 預設那段：先拿 OIDC token 給後面的 action 用
       - name: Install OIDC Client from Core Package

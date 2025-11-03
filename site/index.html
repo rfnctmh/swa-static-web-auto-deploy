@@ -33,15 +33,11 @@
   <p id="build-time">Loading build time...</p>
 </section>
 <script>
-  fetch("build.txt")
-    .then(r => r.text())
-    .then(t => {
-      document.getElementById("build-time").innerText = "Last build: " + t;
-    })
-    .catch(() => {
-      const el = document.getElementById("build-time");
-      if (el) el.innerText = "Last build: (no info)";
-    });
+fetch("build.txt")
+  .then(response => response.text())
+  .then(text => {
+    document.getElementById("build-time").textContent = text.trim();
+  });
 </script>
 
 </body>
