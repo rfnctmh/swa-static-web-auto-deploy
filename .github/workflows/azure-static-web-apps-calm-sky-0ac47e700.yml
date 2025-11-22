@@ -13,6 +13,11 @@ on:
   schedule:
     - cron: "0 0 * * *"  # 每天 00:00 UTC，自動部署一次（台灣時間 08:00）
   workflow_dispatch:
+    inputs:
+      source:
+        description: "Trigger source (azure/gcp/manual/other)"
+        required: false
+        default: "manual"
 
 jobs:
   build_and_deploy_job:
