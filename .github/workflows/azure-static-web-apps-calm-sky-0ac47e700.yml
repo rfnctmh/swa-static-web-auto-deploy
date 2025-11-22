@@ -34,12 +34,18 @@ jobs:
           submodules: true
           lfs: false
 
-      # 這段是你想要的「自動部署時順便寫個檔」，
-      # 不管是排程、push 還是手動，都會寫一份到 site/build.txt
+      # 這段是你想要的「自動部署寫檔」，
+      # 不管是排程or手動，都會寫一份到site/build.txt
       - name: Write build time file
         run: |
           mkdir -p site
-          echo "Last build: $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S GMT+8')" > site/build.txt
+          EVENT_NAME="${{ github.event_name }}"
+          SOURCE="${{ github.event.inputs.source }}"
+          # 如果不是 workflow_dispatch，或是沒有帶 source，就用事件名稱當來源
+          if [ "$EVENT_NAME" != "workflow_dispatch" ] || [ -z "$SOURCE" ]; then
+            SOURCE="$EVENT_NAME"
+          fi
+          echo "Last build: $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S GMT+8') Source: $SOURCE" > site/build.txt
 
       # Azure 預設那段：先拿 OIDC token 給後面的 action 用
       - name: Install OIDC Client from Core Package
