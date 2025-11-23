@@ -88,6 +88,11 @@ jobs:
           git commit -m "chore(build): update build-info for ${{ github.event_name }}" || echo "No changes to commit"
           git push
 
+      - name: Copy build-info.json to site
+        run: |
+          mkdir -p site
+          cp build-info.json site/build-info.json
+          
       # 「自動部署寫檔」，
       - name: Write build time file
         run: |
