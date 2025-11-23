@@ -30,14 +30,29 @@
   <script src="js/main.js"></script>
 
 <section class="build-info">
-  <p id="build-time">Loading build time...</p>
+  <p id="build-push">Loading...</p>
+  <p id="build-schedule">Loading...</p>
+  <p id="build-latest">Loading...</p>
 </section>
+
 <script>
-fetch("build.txt")
-  .then(response => response.text())
-  .then(text => {
-    document.getElementById("build-time").textContent = text.trim();
-  });
+  async function loadBuild(elementId, fileName) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    try {
+      const res = await fetch(fileName);
+      if (!res.ok) throw new Error(res.status);
+      const text = (await res.text()).trim();
+      el.textContent = text;
+    } catch (e) {
+      // 檔案不存在隱藏
+      el.style.display = "none";
+    }
+  }
+  loadBuild("build-push", "build_push.txt");
+  loadBuild("build-schedule", "build_schedule.txt");
+  loadBuild("build-latest", "build.txt");
 </script>
 
 </body>

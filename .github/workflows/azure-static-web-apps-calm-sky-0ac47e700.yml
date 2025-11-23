@@ -39,29 +39,47 @@ jobs:
           submodules: true
           lfs: false
 
-      # 這段是你想要的「自動部署寫檔」，
-      # 不管是排程or手動，都會寫一份到site/build.txt
+      # 「自動部署寫檔」，
       - name: Write build time file
         run: |
           mkdir -p site
+
           EVENT_NAME="${{ github.event_name }}"
-          SOURCE="${{ github.event.inputs.source }}"
-          # 如果不是 workflow_dispatch，或是沒有帶 source，就用事件名稱當來源
-          if [ "$EVENT_NAME" != "workflow_dispatch" ] || [ -z "$SOURCE" ]; then
+          SOURCE_INPUT="${{ github.event.inputs.source }}"
+
+          # 先決定 SOURCE：有帶 inputs.source 就用它，否則用 event_name
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$SOURCE_INPUT" ]; then
+            SOURCE="$SOURCE_INPUT"
+          else
             SOURCE="$EVENT_NAME"
           fi
 
-          # 轉換系統事件文字
-          if [ "$SOURCE" = "push" ]; then
-            SOURCE="GitHub Push"
-          elif [ "$SOURCE" = "schedule" ]; then
-            SOURCE="Daily Schedule"
-          elif [ "$SOURCE" = "workflow_dispatch" ]; then
-            # 如果沒特別帶source，又剛好是workflow_dispatch，就給個預設
-            SOURCE="Manual Trigger"
-          fi
+          TS="$(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S')"
 
-          echo "Build: $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S') Source: $SOURCE" > site/build.txt
+          # 預設顯示文字
+          LABEL="$SOURCE"
+
+          # 依來源決定要寫哪個檔案
+          case "$SOURCE" in
+            push)
+              LABEL="GitHub Push"
+              TARGET_FILE="site/build_push.txt"
+              ;;
+
+            schedule)
+              LABEL="Daily Schedule"
+              TARGET_FILE="site/build_schedule.txt"
+              ;;
+
+            *)
+              # 其他來源（例如 workflow_dispatch: azure/gcp/manual）
+              # 才會寫到 build.txt
+              TARGET_FILE="site/build.txt"
+              ;;
+          esac
+
+          echo "Build: $TS Source: $LABEL" > "$TARGET_FILE"
+
 
       # Azure 預設那段：先拿 OIDC token 給後面的 action 用
       - name: Install OIDC Client from Core Package
