@@ -30,30 +30,39 @@
   <script src="js/main.js"></script>
 
 <section class="build-info">
-  <p id="build-push">Loading...</p>
-  <p id="build-schedule">Loading...</p>
-  <p id="build-latest">Loading...</p>
+  <p id="build-push" style="display:none"></p>
+  <p id="build-schedule" style="display:none"></p>
+  <p id="build-other" style="display:none"></p>
 </section>
 
 <script>
-  async function loadBuild(elementId, fileName) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-
-    try {
-      const res = await fetch(fileName);
+  fetch("build-info.json")
+    .then(res => {
       if (!res.ok) throw new Error(res.status);
-      const text = (await res.text()).trim();
-      el.textContent = text;
-    } catch (e) {
-      // 檔案不存在隱藏
-      el.style.display = "none";
-    }
-  }
-  loadBuild("build-push", "build_push.txt");
-  loadBuild("build-schedule", "build_schedule.txt");
-  loadBuild("build-latest", "build.txt");
+      return res.json();
+    })
+    .then(data => {
+      if (data.push) {
+        const el = document.getElementById("build-push");
+        el.textContent = data.push;
+        el.style.display = "block";
+      }
+      if (data.schedule) {
+        const el = document.getElementById("build-schedule");
+        el.textContent = data.schedule;
+        el.style.display = "block";
+      }
+      if (data.other) {
+        const el = document.getElementById("build-other");
+        el.textContent = data.other;
+        el.style.display = "block";
+      }
+    })
+    .catch(err => {
+      console.error("Failed to load build-info.json", err);
+    });
 </script>
+
 
 </body>
 </html>

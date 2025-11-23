@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - master
+    paths-ignore:
+      - 'build-info.json'
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -30,7 +32,7 @@ jobs:
     name: Build and Deploy Job
     permissions:
       id-token: write
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -38,6 +40,53 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Update build-info.json
+        run: |
+          EVENT_NAME="${{ github.event_name }}"
+          SOURCE_INPUT="${{ github.event.inputs.source }}"
+          TS="$(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S')"
+
+          # 如果檔案不存在就先初始化
+          if [ ! -f build-info.json ]; then
+            echo '{"push":null,"schedule":null,"other":null}' > build-info.json
+          fi
+
+          KEY=""
+          LABEL=""
+
+          if [ "$EVENT_NAME" = "push" ]; then
+            KEY="push"
+            LABEL="Build: $TS Source: GitHub Push"
+          elif [ "$EVENT_NAME" = "schedule" ]; then
+            KEY="schedule"
+            LABEL="Build: $TS Source: Daily Schedule"
+          else
+            # 其餘全部歸類到 other（Cloud Function / Azure / 手動 / PR…）
+            KEY="other"
+
+            if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$SOURCE_INPUT" ]; then
+              # 例如 Source: Cloud Function / Azure / manual
+              LABEL="Build: $TS Source: $SOURCE_INPUT"
+            else
+              LABEL="Build: $TS Source: $EVENT_NAME"
+            fi
+          fi
+
+          echo "Update key=$KEY with: $LABEL"
+
+          tmp=$(mktemp)
+          jq --arg key "$KEY" --arg val "$LABEL" '.[$key] = $val' build-info.json > "$tmp"
+          mv "$tmp" build-info.json
+
+      - name: Commit build-info.json
+        if: github.actor != 'github-actions[bot]'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add build-info.json
+          git commit -m "chore(build): update build-info for ${{ github.event_name }}" || echo "No changes to commit"
+          git push
 
       # 「自動部署寫檔」，
       - name: Write build time file
