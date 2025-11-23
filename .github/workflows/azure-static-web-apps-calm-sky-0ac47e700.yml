@@ -40,6 +40,8 @@ jobs:
         with:
           submodules: true
           lfs: false
+          fetch-depth: 0  # ⭐ 一定要加，後面才能 pull/rebase
+
       - name: Update build-info.json
         run: |
           EVENT_NAME="${{ github.event_name }}"
@@ -79,21 +81,29 @@ jobs:
           mv "$tmp" build-info.json
 
       - name: Commit build-info.json
+        # 不用自己觸發自己，且只在非 github-actions[bot] 時嘗試寫回 repo
         if: github.actor != 'github-actions[bot]'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # 1. 先把遠端最新狀態拉回來，避免 non-fast-forward
+          git fetch origin ${{ github.ref_name }}
+          git pull --rebase origin ${{ github.ref_name }} || echo "No remote changes to rebase"
+
+          # 2. commit 本次 build-info.json 變更
           git add build-info.json
           git commit -m "chore(build): update build-info for ${{ github.event_name }}" || echo "No changes to commit"
-          git push
+
+          # 3. 推不上去不要讓整個 job fail（例如另一個 workflow 搶先推）
+          git push origin HEAD:${{ github.ref_name }} || echo "Skip pushing build-info.json (non-fast-forward)"
 
       - name: Copy build-info.json to site
         run: |
           mkdir -p site
           cp build-info.json site/build-info.json
           
-      # 「自動部署寫檔」，
+      # 「自動部署寫檔」
       - name: Write build time file
         run: |
           mkdir -p site
@@ -119,12 +129,10 @@ jobs:
               LABEL="GitHub Push"
               TARGET_FILE="site/build_push.txt"
               ;;
-
             schedule)
               LABEL="Daily Schedule"
               TARGET_FILE="site/build_schedule.txt"
               ;;
-
             *)
               # 其他來源（例如 workflow_dispatch: azure/gcp/manual）
               # 才會寫到 build.txt
@@ -133,7 +141,6 @@ jobs:
           esac
 
           echo "Build: $TS Source: $LABEL" > "$TARGET_FILE"
-
 
       # Azure 預設那段：先拿 OIDC token 給後面的 action 用
       - name: Install OIDC Client from Core Package
@@ -152,8 +159,6 @@ jobs:
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          # 這裡請換成你 Azure 那個實際產生的 secret 名稱
-          # 例如：AZURE_STATIC_WEB_APPS_API_TOKEN_CALM_SKY_0AC47E700
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           action: "upload"
 
@@ -161,9 +166,7 @@ jobs:
           app_location: "site"     # 你的前端原始碼目錄
           api_location: ""         # 沒有 API 就空著
           output_location: ""      # 你沒有額外 build 目錄就空著
-          # 若你真的要「完全不讓它幫你 build」，可打開這行
-          skip_app_build: true
-
+          skip_app_build: true     # 不另外 build
           # OIDC 給 Azure 用
           github_id_token: ${{ steps.idtoken.outputs.result }}
           # =======================
