@@ -50,7 +50,7 @@ jobs:
           if [ "$EVENT_NAME" != "workflow_dispatch" ] || [ -z "$SOURCE" ]; then
             SOURCE="$EVENT_NAME"
           fi
-          echo "Last build: $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S GMT+8') Source: $SOURCE" > site/build.txt
+          echo "Build: $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S ') Source: $SOURCE" > site/build.txt
 
       # Azure 預設那段：先拿 OIDC token 給後面的 action 用
       - name: Install OIDC Client from Core Package
