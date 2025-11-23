@@ -50,7 +50,18 @@ jobs:
           if [ "$EVENT_NAME" != "workflow_dispatch" ] || [ -z "$SOURCE" ]; then
             SOURCE="$EVENT_NAME"
           fi
-          echo "Build: $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S ') Source: $SOURCE" > site/build.txt
+
+          # 轉換系統事件文字
+          if [ "$SOURCE" = "push" ]; then
+            SOURCE="GitHub Push"
+          elif [ "$SOURCE" = "schedule" ]; then
+            SOURCE="Daily Schedule"
+          elif [ "$SOURCE" = "workflow_dispatch" ]; then
+            # 如果沒特別帶source，又剛好是workflow_dispatch，就給個預設
+            SOURCE="Manual Trigger"
+          fi
+
+          echo "Build: $(TZ='Asia/Taipei' date +'%Y-%m-%d %H:%M:%S') Source: $SOURCE" > site/build.txt
 
       # Azure 預設那段：先拿 OIDC token 給後面的 action 用
       - name: Install OIDC Client from Core Package
