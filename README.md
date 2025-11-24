@@ -1,4 +1,4 @@
-# Azure Static Web Apps Demo (Auto Deploy + Last Build Time)
+# Azure Static Web Apps Demo (Auto Deploy)
 
 This project demonstrates:
 
@@ -82,7 +82,7 @@ POST https://api.github.com/repos/<OWNER>/<REPO>/actions/workflows/azure-static-
 With:
 
 ```json
-{ "ref": "main", "inputs": { "source": "azure" } }
+{ "ref": "main", "inputs": { "source": "Azure Function" } }
 ```
 
 ### 2. Google Cloud Scheduler + Cloud Functions (09:00 Taipei)
@@ -97,7 +97,7 @@ POST https://api.github.com/repos/<OWNER>/<REPO>/actions/workflows/azure-static-
 With:
 
 ```json
-{ "ref": "main", "inputs": { "source": "gcp" } }
+{ "ref": "main", "inputs": { "source": "Cloud Function" } }
 ```
 
 ### 3. Co-existence with GitHub schedule
@@ -112,5 +112,5 @@ After verification, you can disable the schedule block if desired.
 
 ## Notes
 
-- Store tokens (`GITHUB_PAT`) securely in Azure / GCP.
+- Store tokens (`GITHUB_PAT`) securely in Azure / Google Cloud.
 - Frontend only reads `build.txt`; format changes do not break functionality.
